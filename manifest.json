@@ -1,0 +1,15 @@
+{
+  "name": "Calendario dell'Astinenza",
+  "short_name": "Astinenza",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#1d4ed8",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><circle cx='256' cy='256' r='240' fill='%231d4ed8'/><text x='256' y='320' font-size='240' text-anchor='middle' fill='%23ffffff' font-family='serif'>A</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
