@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1d4ed8">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Astinenza">
     <title>Calendario dell'Astinenza</title>
+    
+    <!-- Tag Manifest obbligatorio per la PWA -->
+    <link rel="manifest" href="/Calendario-dell-Astinenza/manifest.json">
+
     <!-- Google Fonts: Cormorant Garamond & Plus Jakarta Sans -->
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <!-- html2canvas per generare l'immagine PNG del blocco contatori -->
@@ -76,7 +80,6 @@
             position: relative;
         }
 
-        /* Sidebar verticale per i gettoni/milestone */
         .milestone-sidebar {
             display: none;
             flex-direction: column;
@@ -92,7 +95,6 @@
             overflow-y: auto;
         }
 
-        /* Stili realistici dei gettoni/medaglie */
         .token {
             width: 48px;
             height: 48px;
@@ -234,7 +236,6 @@
             box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
         }
 
-        /* Pulsanti di gestione dati (Importa / Esporta) */
         .data-actions {
             display: flex;
             gap: 10px;
@@ -445,7 +446,6 @@
                 <input type="date" id="startDate">
             </div>
 
-            <!-- Pulsanti per Importare ed Esportare i dati -->
             <div class="data-actions">
                 <button class="data-btn" id="exportBtn" title="Salva un file di backup dei dati">Esporta Dati</button>
                 <button class="data-btn" id="importBtn" title="Ripristina i dati da un file di backup">Importa Dati</button>
@@ -496,10 +496,10 @@
     </div>
 
     <script>
-        // Registrazione del Service Worker standard per PWA
+        // Registrazione del Service Worker con scope esplicito per GitHub Pages
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
+                navigator.serviceWorker.register('/Calendario-dell-Astinenza/sw.js', { scope: '/Calendario-dell-Astinenza/' })
                     .then(reg => console.log('Service Worker registrato con successo', reg))
                     .catch(err => console.log('Registrazione Service Worker fallita', err));
             });
@@ -736,7 +736,6 @@
             updateMilestones(diffDays);
         }
 
-        // Gestione Esportazione Dati (Backup JSON)
         exportBtn.addEventListener('click', () => {
             const dataToExport = {
                 startDate: localStorage.getItem('oa_start_date'),
@@ -754,7 +753,6 @@
             URL.revokeObjectURL(url);
         });
 
-        // Gestione Importazione Dati
         importBtn.addEventListener('click', () => {
             importFile.click();
         });
@@ -780,10 +778,9 @@
                 }
             };
             reader.readAsText(file);
-            importFile.value = ''; // Reset input file
+            importFile.value = '';
         });
 
-        // Condivisione Immagine PNG
         shareBtn.addEventListener('click', async () => {
             try {
                 shareBtn.style.display = 'none';
