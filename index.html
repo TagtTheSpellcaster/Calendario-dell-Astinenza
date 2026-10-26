@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1d4ed8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Astinenza">
+    <title>Calendario dell'Astinenza</title>
+    <!-- Google Fonts: Cormorant Garamond & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- html2canvas per generare l'immagine PNG del blocco contatori -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --accent-primary: #1d4ed8;
+            --accent-light: #eff6ff;
+            --border-color: #cbd5e1;
+            --shadow: 0 12px 35px rgba(29, 78, 216, 0.06);
+            --transition: all 0.4s ease;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0b1329;
+            --card-bg: #111c38;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #60a5fa;
+            --accent-light: #172554;
+            --border-color: #1e3a8a;
+            --shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            transition: var(--transition);
+        }
+
+        .main-layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            max-width: 100%;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border-radius: 28px;
+            padding: 40px 32px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        /* Sidebar verticale per i gettoni/milestone */
+        .milestone-sidebar {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px 12px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            align-items: center;
+            transition: var(--transition);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        /* Stili realistici dei gettoni/medaglie */
+        .token {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -3px 6px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeInToken 0.5s ease forwards;
+            flex-shrink: 0;
+        }
+
+        .token::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border-radius: 50%;
+            border: 1px dashed rgba(255,255,255,0.4);
+            pointer-events: none;
+        }
+
+        @keyframes fadeInToken {
+            from { opacity: 0; transform: translateY(-10px) scale(0.8); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .token-silver {
+            background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 50%, #64748b 100%);
+            border: 1px solid #94a3b8;
+        }
+        .token-red {
+            background: linear-gradient(135deg, #f87171 0%, #dc2626 50%, #7f1d1d 100%);
+            border: 1px solid #b91c1c;
+        }
+        .token-gold {
+            background: linear-gradient(135deg, #fde047 0%, #eab308 50%, #854d0e 100%);
+            border: 1px solid #ca8a04;
+        }
+        .token-emerald {
+            background: linear-gradient(135deg, #34d399 0%, #059669 50%, #064e3b 100%);
+            border: 1px solid #047857;
+        }
+        .token-blue {
+            background: linear-gradient(135deg, #60a5fa 0%, #2563eb 50%, #1e3a8a 100%);
+            border: 1px solid #1d4ed8;
+        }
+        .token-purple {
+            background: linear-gradient(135deg, #c084fc 0%, #9333ea 50%, #3b0764 100%);
+            border: 1px solid #7e22ce;
+        }
+        .token-bronze {
+            background: linear-gradient(135deg, #fdba74 0%, #d97706 50%, #78350f 100%);
+            border: 2px solid #b45309;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3), inset 0 2px 5px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(0,0,0,0.4);
+            color: #ffffff;
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 28px;
+            right: 28px;
+            background: var(--accent-light);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1.1rem;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.08);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 28px;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        input[type="date"] {
+            width: 100%;
+            padding: 14px 16px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1rem;
+            color: var(--text-primary);
+            background-color: var(--accent-light);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        input[type="date"]:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+        }
+
+        .exportable-card {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 10px;
+            transition: var(--transition);
+        }
+
+        .counter-display {
+            background-color: var(--accent-light);
+            border-radius: 18px;
+            padding: 28px 20px;
+            text-align: center;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .share-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .share-btn:hover {
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            transform: scale(1.08);
+        }
+
+        .share-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .days-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 4.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .days-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        .breakdown {
+            display: flex;
+            justify-content: space-around;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            margin-bottom: 4px;
+        }
+
+        .breakdown-item {
+            text-align: center;
+        }
+
+        .breakdown-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .breakdown-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
+        }
+
+        .meditation-box {
+            text-align: center;
+            padding: 22px;
+            background: var(--accent-light);
+            border-radius: 16px;
+            border: 1px dashed var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .meditation-quote {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .oa-monthly-focus {
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+            text-align: left;
+        }
+
+        .oa-monthly-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent-primary);
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .oa-monthly-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .oa-monthly-text strong {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--accent-primary);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 640px) {
+            .main-layout {
+                flex-direction: column;
+                align-items: center;
+            }
+            .milestone-sidebar {
+                flex-direction: row;
+                flex-wrap: wrap;
+                width: 100%;
+                max-width: 600px;
+                justify-content: center;
+                max-height: none;
+            }
+            .container {
+                padding: 30px 20px;
+            }
+            .days-number {
+                font-size: 3.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-layout">
+        <div class="container">
+            <button class="theme-toggle" id="themeToggle" title="Cambia tema">☀️</button>
+
+            <header>
+                <h1>Calendario dell'Astinenza</h1>
+                <p class="subtitle">Cammino di serenità e consapevolezza</p>
+            </header>
+
+            <div class="input-group">
+                <label for="startDate">Data di inizio astinenza</label>
+                <input type="date" id="startDate">
+            </div>
+
+            <div class="exportable-card" id="exportCard">
+                <div class="counter-display">
+                    <button class="share-btn" id="shareBtn" title="Condividi traguardo">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/>
+                        </svg>
+                    </button>
+                    <div class="days-number" id="daysCount">0</div>
+                    <div class="days-label" id="daysText">giorni di astinenza</div>
+                </div>
+
+                <div class="breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="yearsCount">0</div>
+                        <div class="breakdown-label">Anni</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="monthsCount">0</div>
+                        <div class="breakdown-label">Mesi</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="weeksCount">0</div>
+                        <div class="breakdown-label">Settimane</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="hoursCount">0</div>
+                        <div class="breakdown-label">Ore circa</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="meditation-box">
+                <p class="meditation-quote" id="meditationQuote">"Progressione, non perfezione. Oggi scelgo la pace."</p>
+                <div class="oa-monthly-focus">
+                    <div class="oa-monthly-title" id="monthlyFocusTitle">Focus del mese</div>
+                    <div class="oa-monthly-text" id="monthlyFocusText">Caricamento in corso...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="milestone-sidebar" id="milestoneSidebar"></div>
+    </div>
+
+    <script>
+        // --- INIEZIONE DINAMICA PWA (MANIFEST & SERVICE WORKER) ---
+        const manifestData = {
+            name: "Calendario dell'Astinenza",
+            short_name: "Astinenza",
+            start_url: "./",
+            display: "standalone",
+            background_color: "#f0f4f8",
+            theme_color: "#1d4ed8",
+            icons: [
+                {
+                    src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><circle cx='256' cy='256' r='240' fill='%231d4ed8'/><text x='256' y='320' font-size='240' text-anchor='middle' fill='%23ffffff' font-family='serif'>A</text></svg>",
+                    sizes: "192x192 512x512",
+                    type: "image/svg+xml"
+                }
+            ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/manifest+json' });
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = URL.createObjectURL(manifestBlob);
+        document.head.appendChild(manifestLink);
+
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', (e) => { self.skipWaiting(); });
+                self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
+                self.addEventListener('fetch', (e) => {
+                    e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+                });
+            `;
+            const swBlob = new Blob([swCode], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(err => console.log('SW error', err));
+        }
+        // -----------------------------------------------------------
+
+        const startDateInput = document.getElementById('startDate');
+        const daysCountEl = document.getElementById('daysCount');
+        const daysTextEl = document.getElementById('daysText');
+        const yearsCountEl = document.getElementById('yearsCount');
+        const monthsCountEl = document.getElementById('monthsCount');
+        const weeksCountEl = document.getElementById('weeksCount');
+        const hoursCountEl = document.getElementById('hoursCount');
+        const meditationQuoteEl = document.getElementById('meditationQuote');
+        const monthlyFocusTitleEl = document.getElementById('monthlyFocusTitle');
+        const monthlyFocusTextEl = document.getElementById('monthlyFocusText');
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const milestoneSidebar = document.getElementById('milestoneSidebar');
+        const shareBtn = document.getElementById('shareBtn');
+        const exportCard = document.getElementById('exportCard');
+
+        const subYearMilestones = [
+            { days: 1, className: 'token-silver', title: '24 Ore' },
+            { days: 30, className: 'token-red', title: '1 Mese' },
+            { days: 60, className: 'token-gold', title: '2 Mesi' },
+            { days: 90, className: 'token-emerald', title: '3 Mesi' },
+            { days: 180, className: 'token-blue', title: '6 Mesi' },
+            { days: 270, className: 'token-purple', title: '9 Mesi' }
+        ];
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('oa_theme', theme);
+            themeToggleBtn.textContent = theme === 'dark' ? '🌙' : '☀️';
+        }
+
+        const savedTheme = localStorage.getItem('oa_theme') || 'light';
+        setTheme(savedTheme);
+
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+
+        const quotes = [
+            "\"Progressione, non perfezione. Oggi scelgo la pace.\"",
+            "\"Un solo giorno alla volta. Questo momento è tutto ciò che possediamo.\"",
+            "\"La serenità viene quando lasciamo andare ciò che non possiamo controllare.\"",
+            "\"Ogni passo avanti, per quanto piccolo, è una vittoria sulla compulsione.\"",
+            "\"Oggi mi prendo cura della mia pace interiore.\""
+        ];
+
+        const oaMonthlyContent = [
+            {
+                monthName: "Gennaio",
+                step: "1° Passo: Noi abbiamo ammesso di essere impotenti di fronte al cibo e che la nostra vita era diventata incontrollabile.",
+                tradition: "1° Tradizione: Il nostro comune benessere dovrebbe venire in primo luogo; il recupero personale dipende dall’unità di O.A.",
+                promise: "1ª Promessa: Conosceremo una nuova libertà e una nuova felicità."
+            },
+            {
+                monthName: "Febbraio",
+                step: "2° Passo: Siamo giunti a credere che un Potere più grande di noi avrebbe potuto restituirci la salute della mente.",
+                tradition: "2° Tradizione: Per il fine del nostro gruppo esiste una sola autorità: un Dio amorevole, così come Egli si può manifestare nella coscienza del nostro gruppo. Le nostre guide sono solamente dei servitori di fiducia, essi non governano.",
+                promise: "2ª Promessa: Non ci affliggeremo del passato, ma ci impegneremo a non dimenticarlo mai."
+            },
+            {
+                monthName: "Marzo",
+                step: "3° Passo: Abbiamo deciso di affidare la nostra volontà e la nostra vita alla cura di Dio COSI’ COME NOI POTEVAMO CONCEPIRLO.",
+                tradition: "3° Tradizione: L’unico requisito per essere membri di O.A. è il desiderio di smettere di mangiare in modo compulsivo.",
+                promise: "3ª Promessa: Capiremo cosa significa la parola Serenità."
+            },
+            {
+                monthName: "Aprile",
+                step: "4° Passo: Abbiamo fatto un inventario morale profondo e coraggioso di noi stessi.",
+                tradition: "4° Tradizione: Ciascun gruppo dovrebbe essere autonomo eccetto per le questioni riguardanti altri gruppi oppure O.A. nel suo insieme.",
+                promise: "4ª Promessa: Conosceremo la pace."
+            },
+            {
+                monthName: "Maggio",
+                step: "5° Passo: Abbiamo ammesso davanti a Dio, di fronte a noi stessi e di fronte ad un’altra persona, la natura esatta dei nostri torti.",
+                tradition: "5° Tradizione: Ciascun gruppo non ha che un solo scopo primario: trasmettere il suo messaggio al mangiatore compulsivo che ancora soffre.",
+                promise: "5ª Promessa: Poco importa a quale grado di abiezione siamo scesi, constateremo come la nostra esperienza possa giovare agli altri."
+            },
+            {
+                monthName: "Giugno",
+                step: "6° Passo: Siamo giunti ad accettare, senza riserve, che Dio eliminasse tutti questi difetti del nostro carattere.",
+                tradition: "6° Tradizione: Un gruppo O.A. non dovrebbe mai avallare, finanziare o prestare il nome di O.A. ad alcuna istituzione similare o organizzazione esterna, per evitare che problemi di denaro, di proprietà e di prestigio possano distrarci dal nostro scopo primario.",
+                promise: "6ª Promessa: Scomparirà ogni idea dell’inutilità della nostra vita e così pure ogni forma di commiserazione di noi stessi."
+            },
+            {
+                monthName: "Luglio",
+                step: "7° Passo: Gli abbiamo umilmente chiesto di porre rimedio alle nostre insufficienze.",
+                tradition: "7° Tradizione: Ogni gruppo O.A. dovrebbe mantenersi completamente da solo, rifiutando contributi esterni.",
+                promise: "7ª Promessa: Perderemo l’interesse per i nostri capricci e ci dedicheremo al servizio degli altri."
+            },
+            {
+                monthName: "Agosto",
+                step: "8° Passo: Abbiamo fatto un elenco di tutte le persone a cui abbiamo fatto del male e abbiamo deciso di fare ammenda verso tutte queste persone.",
+                tradition: "8° Tradizione: Overeaters Anonymous dovrebbe rimanere per sempre non professionale, ma i nostri centri di servizio potranno assumere degli impiegati appositi.",
+                promise: "8ª Promessa: L’egoismo scomparirà."
+            },
+            {
+                monthName: "Settembre",
+                step: "9° Passo: Abbiamo fatto direttamente ammenda verso queste persone quando possibile, salvo nei casi in cui questo avrebbe potuto recar danno a loro e ad altri.",
+                tradition: "9° Tradizione: O.A. in quanto tale, non dovrebbe mai essere organizzata, ma possiamo costituire consigli o comitati di servizio direttamente responsabili verso coloro che essi servono.",
+                promise: "9ª Promessa: Le nostre idee sulla vita cambieranno come dal giorno alla notte."
+            },
+            {
+                monthName: "Ottobre",
+                step: "10° Passo: Abbiamo continuato a fare il nostro inventario personale e, quando ci siamo trovati in torto, lo abbiamo ammesso senza esitare.",
+                tradition: "10° Tradizione: Overeaters Anonymous non ha opinioni su questioni esterne, di conseguenza il nome di O.A. non dovrebbe mai essere coinvolto in pubbliche controversie.",
+                promise: "10ª Promessa: La paura delle persone e la paura dell’insicurezza economica ci abbandoneranno."
+            },
+            {
+                monthName: "Novembre",
+                step: "11° Passo: Abbiamo cercato, con la preghiera e la meditazione, di migliorare il nostro contatto cosciente con Dio COSI’ COME NOI POTEVAMO CONCEPIRLO, chiedendogli solo di farci conoscere la sua volontà e darci la forza per compierla.",
+                tradition: "11° Tradizione: La politica delle nostre relazioni pubbliche è basata sull’attrazione più che sulla promozione; noi abbiamo bisogno di mantenere sempre l’anonimato personale nei confronti della stampa, della radio, del cinema, della televisione e di altri mezzi di comunicazione.",
+                promise: "11ª Promessa: Intuiremo come dovremo comportarci di fronte a delle situazioni che di solito ci sconcertavano."
+            },
+            {
+                monthName: "Dicembre",
+                step: "12° Passo: Avendo ottenuto, come risultato di questi passi, un risveglio spirituale, abbiamo cercato di trasmettere questo messaggio ai mangiatori compulsivi e di mettere in pratica questi principi in tutti i campi della nostra vita.",
+                tradition: "12° Tradizione: L’anonimato è la base spirituale di tutte le nostre tradizioni, che ci ricorda sempre di porre i principi al di sopra delle personalità.",
+                promise: "12ª Promessa: Ci renderemo conto tutto ad un tratto che Dio fa per noi ciò che noi non riuscivamo a fare da soli."
+            }
+        ];
+
+        function getRandomQuote() {
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            return quotes[randomIndex];
+        }
+
+        function updateMonthlyFocus() {
+            const currentMonthIndex = new Date().getMonth();
+            const focus = oaMonthlyContent[currentMonthIndex];
+            
+            monthlyFocusTitleEl.textContent = `Focus del mese (${focus.monthName})`;
+            monthlyFocusTextEl.innerHTML = `
+                <strong>Passo</strong>${focus.step}<br><br>
+                <strong>Tradizione</strong>${focus.tradition}<br><br>
+                <strong>Promessa</strong>${focus.promise}
+            `;
+        }
+
+        function updateMilestones(diffDays) {
+            milestoneSidebar.innerHTML = '';
+            if (diffDays < 1) {
+                milestoneSidebar.style.display = 'none';
+                return;
+            }
+            milestoneSidebar.style.display = 'flex';
+
+            subYearMilestones.forEach(m => {
+                if (diffDays >= m.days) {
+                    const token = document.createElement('div');
+                    token.className = `token ${m.className}`;
+                    token.title = m.title;
+                    milestoneSidebar.appendChild(token);
+                }
+            });
+
+            const years = Math.floor(diffDays / 365);
+            if (years >= 1) {
+                const token = document.createElement('div');
+                token.className = 'token token-bronze';
+                token.title = `${years} ${years === 1 ? 'Anno' : 'Anni'}`;
+                token.textContent = years;
+                milestoneSidebar.appendChild(token);
+            }
+        }
+
+        function getStoredDate() {
+            return localStorage.getItem('oa_start_date');
+        }
+
+        function saveDate(dateStr) {
+            if (dateStr) {
+                localStorage.setItem('oa_start_date', dateStr);
+            } else {
+                localStorage.removeItem('oa_start_date');
+            }
+        }
+
+        function calculateDays() {
+            const startDateStr = startDateInput.value;
+            if (!startDateStr) {
+                daysCountEl.textContent = "—";
+                daysTextEl.textContent = "Seleziona una data di inizio";
+                yearsCountEl.textContent = "—";
+                monthsCountEl.textContent = "—";
+                weeksCountEl.textContent = "—";
+                hoursCountEl.textContent = "—";
+                milestoneSidebar.style.display = 'none';
+                return;
+            }
+
+            const start = new Date(startDateStr);
+            start.setHours(0, 0, 0, 0);
+
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+
+            const diffTime = now - start;
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                daysCountEl.textContent = "0";
+                daysTextEl.textContent = "La data non può essere nel futuro";
+                yearsCountEl.textContent = "0";
+                monthsCountEl.textContent = "0";
+                weeksCountEl.textContent = "0";
+                hoursCountEl.textContent = "0";
+                milestoneSidebar.style.display = 'none';
+                return;
+            }
+
+            daysCountEl.textContent = diffDays;
+            daysTextEl.textContent = diffDays === 1 ? "giorno di astinenza" : "giorni di astinenza";
+
+            const years = (diffDays / 365).toFixed(1);
+            yearsCountEl.textContent = years;
+
+            const weeks = Math.floor(diffDays / 7);
+            weeksCountEl.textContent = weeks;
+
+            const months = (diffDays / 30.4375).toFixed(1);
+            monthsCountEl.textContent = months;
+
+            const hours = diffDays * 24;
+            hoursCountEl.textContent = hours.toLocaleString('it-IT');
+
+            updateMilestones(diffDays);
+        }
+
+        shareBtn.addEventListener('click', async () => {
+            try {
+                shareBtn.style.display = 'none';
+                const canvas = await html2canvas(exportCard, {
+                    scale: 2,
+                    backgroundColor: null,
+                    useCORS: true
+                });
+                shareBtn.style.display = 'flex';
+
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], "astinenza.png", { type: "image/png" });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                title: 'Il mio traguardo di astinenza',
+                                text: 'Un giorno alla volta nel cammino di serenità.',
+                                files: [file]
+                            });
+                        } catch (err) {
+                            if (err.name !== 'AbortError') downloadImage(blob);
+                        }
+                    } else {
+                        downloadImage(blob);
+                    }
+                }, 'image/png');
+            } catch (err) {
+                shareBtn.style.display = 'flex';
+                console.error("Errore esportazione immagine:", err);
+            }
+        });
+
+        function downloadImage(blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'astinenza-traguardo.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        const savedDate = getStoredDate();
+        if (savedDate) {
+            startDateInput.value = savedDate;
+        } else {
+            const todayStr = new Date().toISOString().split('T')[0];
+            startDateInput.value = todayStr;
+            saveDate(todayStr);
+        }
+
+        calculateDays();
+        meditationQuoteEl.textContent = getRandomQuote();
+        updateMonthlyFocus();
+
+        startDateInput.addEventListener('change', (e) => {
+            saveDate(e.target.value);
+            calculateDays();
+        });
+    </script>
+</body>
+</html>
