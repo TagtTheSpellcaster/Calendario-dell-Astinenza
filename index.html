@@ -205,7 +205,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            margin-bottom: 28px;
+            margin-bottom: 20px;
         }
 
         label {
@@ -232,6 +232,34 @@
         input[type="date"]:focus {
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+        }
+
+        /* Pulsanti di gestione dati (Importa / Esporta) */
+        .data-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .data-btn {
+            flex: 1;
+            padding: 10px 14px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .data-btn:hover {
+            background-color: var(--accent-light);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
         }
 
         .exportable-card {
@@ -417,6 +445,13 @@
                 <input type="date" id="startDate">
             </div>
 
+            <!-- Pulsanti per Importare ed Esportare i dati -->
+            <div class="data-actions">
+                <button class="data-btn" id="exportBtn" title="Salva un file di backup dei dati">Esporta Dati</button>
+                <button class="data-btn" id="importBtn" title="Ripristina i dati da un file di backup">Importa Dati</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
+
             <div class="exportable-card" id="exportCard">
                 <div class="counter-display">
                     <button class="share-btn" id="shareBtn" title="Condividi traguardo">
@@ -461,40 +496,14 @@
     </div>
 
     <script>
-        // --- INIEZIONE DINAMICA PWA (MANIFEST & SERVICE WORKER) ---
-        const manifestData = {
-            name: "Calendario dell'Astinenza",
-            short_name: "Astinenza",
-            start_url: "./",
-            display: "standalone",
-            background_color: "#f0f4f8",
-            theme_color: "#1d4ed8",
-            icons: [
-                {
-                    src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><circle cx='256' cy='256' r='240' fill='%231d4ed8'/><text x='256' y='320' font-size='240' text-anchor='middle' fill='%23ffffff' font-family='serif'>A</text></svg>",
-                    sizes: "192x192 512x512",
-                    type: "image/svg+xml"
-                }
-            ]
-        };
-        const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/manifest+json' });
-        const manifestLink = document.createElement('link');
-        manifestLink.rel = 'manifest';
-        manifestLink.href = URL.createObjectURL(manifestBlob);
-        document.head.appendChild(manifestLink);
-
+        // Registrazione del Service Worker standard per PWA
         if ('serviceWorker' in navigator) {
-            const swCode = `
-                self.addEventListener('install', (e) => { self.skipWaiting(); });
-                self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
-                self.addEventListener('fetch', (e) => {
-                    e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
-                });
-            `;
-            const swBlob = new Blob([swCode], { type: 'application/javascript' });
-            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(err => console.log('SW error', err));
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registrato con successo', reg))
+                    .catch(err => console.log('Registrazione Service Worker fallita', err));
+            });
         }
-        // -----------------------------------------------------------
 
         const startDateInput = document.getElementById('startDate');
         const daysCountEl = document.getElementById('daysCount');
@@ -510,6 +519,9 @@
         const milestoneSidebar = document.getElementById('milestoneSidebar');
         const shareBtn = document.getElementById('shareBtn');
         const exportCard = document.getElementById('exportCard');
+        const exportBtn = document.getElementById('exportBtn');
+        const importBtn = document.getElementById('importBtn');
+        const importFile = document.getElementById('importFile');
 
         const subYearMilestones = [
             { days: 1, className: 'token-silver', title: '24 Ore' },
@@ -724,6 +736,54 @@
             updateMilestones(diffDays);
         }
 
+        // Gestione Esportazione Dati (Backup JSON)
+        exportBtn.addEventListener('click', () => {
+            const dataToExport = {
+                startDate: localStorage.getItem('oa_start_date'),
+                theme: localStorage.getItem('oa_theme'),
+                exportDate: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'astinenza-backup.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Gestione Importazione Dati
+        importBtn.addEventListener('click', () => {
+            importFile.click();
+        });
+
+        importFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.startDate) {
+                        saveDate(importedData.startDate);
+                        startDateInput.value = importedData.startDate;
+                    }
+                    if (importedData.theme) {
+                        setTheme(importedData.theme);
+                    }
+                    calculateDays();
+                    alert('Dati importati con successo!');
+                } catch (err) {
+                    alert('Errore: il file selezionato non è un backup valido.');
+                }
+            };
+            reader.readAsText(file);
+            importFile.value = ''; // Reset input file
+        });
+
+        // Condivisione Immagine PNG
         shareBtn.addEventListener('click', async () => {
             try {
                 shareBtn.style.display = 'none';
